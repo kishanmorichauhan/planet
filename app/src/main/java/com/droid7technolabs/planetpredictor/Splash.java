@@ -31,7 +31,7 @@ public class Splash extends AppCompatActivity {
     TextView appname;
     ImageView logo;
 
-    Animation round;
+    Animation zoomIn,top,bottom;
     FirebaseAuth auth;
     FirebaseFirestore firebaseFirestore;
 
@@ -55,8 +55,11 @@ public class Splash extends AppCompatActivity {
         logo = findViewById(R.id.appLogo);
 
         //for logo animation
-        round = AnimationUtils.loadAnimation(this, R.anim.round_anim);
-        logo.setAnimation(round);
+        zoomIn = AnimationUtils.loadAnimation(this, R.anim.zoom_in);
+        top = AnimationUtils.loadAnimation(this,R.anim.top);
+        bottom = AnimationUtils.loadAnimation(this,R.anim.bottom_anim);
+        logo.setAnimation(zoomIn);
+        appname.setAnimation(bottom);
 
         //handler for timing
         new Handler().postDelayed(new Runnable() {

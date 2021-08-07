@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.droid7technolabs.planetpredictor.ui.home.HomeFragment;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -44,6 +45,7 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
     String prize;
     String senderUid;
     String senderRoom, receiverRoom;
+    String msg;
 
     TextView tv_Prize;
     String adminid = "RB1AwI7NHZOsg3Y5IePe9yuZabM2";
@@ -51,6 +53,9 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
     DateFormat df = new SimpleDateFormat("d MMM,h:mm a");
     String date1 = df.format(Calendar.getInstance().getTime());
     FirebaseDatabase database;
+    Messages wlcMsg2 = new Messages("Thank you! One of our astrologers will contact you within 24 hours.", adminid, date.getTime(), "");
+
+    //Messages message = new Messages(messageTxt, senderUid, date.getTime(), date1);
 
     Messages paymentMsg = new Messages("Payment Received for normal question", adminid, date.getTime(), "");
 
@@ -97,7 +102,7 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
                 Checkout checkout = new Checkout();
                 //API key of razorpay
                 checkout.setKeyID("rzp_live_q1YBy2AxpwLY04");
-                checkout.setImage(R.drawable.horoscope);//set icon
+                checkout.setImage(R.drawable.dialog_icon);//set icon
                 JSONObject object = new JSONObject();
 
                 try {
@@ -106,7 +111,7 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
                     //description
                     object.put("description","Planets Predictors Payment");
                     //theme color
-                    object.put("theme.color","#0093DD");
+                    object.put("theme.color","#040438");
                     //current unit
                     object.put("currency","INR");
                     //amount
@@ -127,9 +132,8 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
     public void onPaymentSuccess(String s) {
         //dialog box
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Payment ID");
-//        builder.setMessage(s);
-        //builder.show();
+        Intent i = new Intent(PaymentActivity.this, Navigation2Activity.class);
+        startActivity(i);
 
         //store PaymentId and UId is Successful
         userId = auth.getCurrentUser().getUid();
@@ -143,13 +147,81 @@ public class PaymentActivity extends AppCompatActivity implements PaymentResultL
         documentReference.set(payment).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void unused) {
-                Intent i = new Intent(PaymentActivity.this, Navigation2Activity.class);
-                startActivity(i);
+
                 SharedPreferences preferences = getSharedPreferences("com.example.counter", 0);
                 preferences.edit().remove("pref_total_key").commit();
 
                 senderUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
+                Intent iin= getIntent();
+                Bundle b = iin.getExtras();
+
+                if(b!=null)
+                {
+                    msg =(String) b.get("msg");
+                }
+                Messages message = new Messages(msg, senderUid, date.getTime(), date1);
+                String randomKey = database.getReference().push().getKey();
+                senderUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                adminid = "RB1AwI7NHZOsg3Y5IePe9yuZabM2";
+                //Room
+                senderRoom = senderUid + adminid;
+                receiverRoom = adminid + senderUid;
+
+                database.getReference().child("chats")
+                        .child(senderRoom)
+                        .child("messages")
+                        .child(randomKey)
+                        .setValue(message)
+                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void unused) {
+                                database.getReference().child("chats")
+                                        .child(receiverRoom)
+                                        .child("messages")
+                                        .child(randomKey)
+                                        .setValue(message)
+                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void unused) {
+                                                //sending notification to admin
+                                                //clear message in messageBox
+                                                //clear message in sharePreference
+                                                SharedPreferences preferences = getSharedPreferences("mypref", 0);
+                                                SharedPreferences.Editor rm = preferences.edit().clear();
+                                                rm.clear();
+                                                rm.apply();
+                                                preferences.edit().remove("name").commit();
+
+                                                //for welcome message 2
+                                                String randomKey2 = database.getReference().push().getKey();
+
+                                                database.getReference().child("chats")
+                                                        .child(senderRoom)
+                                                        .child("messages")
+                                                        .child(randomKey2)
+                                                        .setValue(wlcMsg2)
+                                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                            @Override
+                                                            public void onSuccess(Void unused) {
+                                                                database.getReference().child("chats")
+                                                                        .child(receiverRoom)
+                                                                        .child("messages")
+                                                                        .child(randomKey2)
+                                                                        .setValue(wlcMsg2)
+                                                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                                            @Override
+                                                                            public void onSuccess(Void unused) {
+
+                                                                            }
+                                                                        });
+                                                            }
+                                                        });
+
+                                            }
+                                        });
+                            }
+                        });
                 senderRoom = senderUid + adminid;
                 receiverRoom = adminid + senderUid;
 

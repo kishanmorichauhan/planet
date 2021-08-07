@@ -125,7 +125,6 @@ public class AdminDetails extends AppCompatActivity {
                     });
 
                 }else {
-
                     //if no image selected then execute this code
                     String name = admin_name.getText().toString();
                     if (name.matches("")) {

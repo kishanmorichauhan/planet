@@ -1,5 +1,6 @@
 package com.droid7technolabs.planetpredictor.ui.home;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -20,6 +21,7 @@ import com.droid7technolabs.planetpredictor.FcmNotificationsSender;
 import com.droid7technolabs.planetpredictor.Messages;
 import com.droid7technolabs.planetpredictor.MessagesAdapter;
 import com.droid7technolabs.planetpredictor.Notification.Token;
+import com.droid7technolabs.planetpredictor.PaymentActivity;
 import com.droid7technolabs.planetpredictor.UserDetails.UserData;
 import com.droid7technolabs.planetpredictor.databinding.FragmentHomeBinding;
 import com.droid7technolabs.planetpredictor.preconfig;
@@ -76,7 +78,7 @@ public class HomeFragment extends Fragment {
     Date date = new Date();
     DateFormat df = new SimpleDateFormat("d MMM,h:mm a");
     String date1 = df.format(Calendar.getInstance().getTime());
-    Messages wlcMsg = new Messages("Welcome to Planets Predictors!  Thanks for using the application. Now you can ask your question. 1st question will be free.", adminid, date.getTime(), "");
+    Messages wlcMsg = new Messages("Welcome to Planets Predictors! Thanks for using this application. After taking consultation you will start believing in vedic astrology. You can ask your question here.", adminid, date.getTime(), "");
     Messages wlcMsg2 = new Messages("Thank you! One of our astrologers will contact you within 24 hours.", adminid, date.getTime(), "");
 
     //for notification
@@ -248,7 +250,12 @@ public class HomeFragment extends Fragment {
         binding.sendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 messageTxt = binding.messageBox.getText().toString();
+
+                Intent ii=new Intent(HomeFragment.this.getContext(), PaymentActivity.class);
+                ii.putExtra("msg", messageTxt);
+                startActivity(ii);
 
                 //checking wether user has type any message
                 if (!messageTxt.isEmpty()) {
@@ -290,97 +297,32 @@ public class HomeFragment extends Fragment {
                 //messageBox value store in sharePreference
                 preconfig.saveTotalInPref(getActivity().getApplicationContext(), counter);
                 String randomKey = database.getReference().push().getKey();
-                SharedPreferences sp = getActivity().getSharedPreferences("mypref", 0);
-                SharedPreferences.Editor ed = sp.edit();
-                ed.putString("name", binding.messageBox.getText().toString());
-                ed.apply();
-                binding.messageBox.setText(binding.messageBox.getText().toString());
+//                SharedPreferences sp = getActivity().getSharedPreferences("mypref", 0);
+//                SharedPreferences.Editor ed = sp.edit();
+//                ed.putString("name", binding.messageBox.getText().toString());
+//                ed.apply();
+//                binding.messageBox.setText(binding.messageBox.getText().toString());
 
 
-                if (counter >= 2) {
+                if (counter >= 1) {
                     //open payment dialogBox
-                    openDiloge();
+                   // openDiloge();
                 } else {
-                    //for normal message
+                    binding.sendBtn.performClick();                    //for normal message
                     messageTxt = binding.messageBox.getText().toString();
                     DateFormat df = new SimpleDateFormat("d MMM,h:mm a");
                     String date1 = df.format(Calendar.getInstance().getTime());
                     Date date = new Date();
-                    Messages message = new Messages(messageTxt, senderUid, date.getTime(), date1);
                     notify = true;
-
-                    //message send userSide and adminSide
-                    database.getReference().child("chats")
-                            .child(senderRoom)
-                            .child("messages")
-                            .child(randomKey)
-                            .setValue(message)
-                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void unused) {
-                                    database.getReference().child("chats")
-                                            .child(receiverRoom)
-                                            .child("messages")
-                                            .child(randomKey)
-                                            .setValue(message)
-                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void unused) {
-                                                    //sending notification to admin
-                                                    FcmNotificationsSender fcmNotificationsSender = new FcmNotificationsSender(token, title, messageTxt, getActivity(), HomeFragment.this.getActivity());
-                                                    fcmNotificationsSender.SendNotifications();
-                                                    //clear message in messageBox
-                                                    binding.messageBox.setText("");
-                                                    //clear message in sharePreference
-                                                    SharedPreferences preferences = getActivity().getSharedPreferences("mypref", 0);
-                                                    SharedPreferences.Editor rm = preferences.edit().clear();
-                                                    rm.clear();
-                                                    rm.apply();
-                                                    preferences.edit().remove("name").commit();
-
-                                                    //for welcome message 2
-                                                    String randomKey2 = database.getReference().push().getKey();
-
-                                                        database.getReference().child("chats")
-                                                                .child(senderRoom)
-                                                                .child("messages")
-                                                                .child(randomKey2)
-                                                                .setValue(wlcMsg2)
-                                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                                    @Override
-                                                                    public void onSuccess(Void unused) {
-                                                                        database.getReference().child("chats")
-                                                                                .child(receiverRoom)
-                                                                                .child("messages")
-                                                                                .child(randomKey2)
-                                                                                .setValue(wlcMsg2)
-                                                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                                                    @Override
-                                                                                    public void onSuccess(Void unused) {
-
-                                                                                    }
-                                                                                });
-                                                                    }
-                                                                });
-
-                                                }
-                                            });
-                                }
-                            });
 
                 }
 
             }
         });
-        //setting the message value to sharePreferences
-        SharedPreferences sp1 = getActivity().getSharedPreferences("mypref", 0);
-        String editvalue = sp1.getString("name", "");
-        binding.messageBox.setText(editvalue);
-
-
         return root;
     }
-//payment dialoge
+
+    //payment dialoge
     public void openDiloge() {
         Dialoge exampleDialog = new Dialoge(binding.sendBtn.getContext());
         exampleDialog.show(getFragmentManager(), "example dialoge");
